@@ -1,0 +1,4 @@
+ddgs
+python-dotenv
+requests
+trafilatura
