@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Callable
 
 from .config import Settings
 from .retriever import RetrievedPage, retrieve_pages
@@ -31,17 +32,26 @@ def build_research_notes(question: str, pages: list[RetrievedPage]) -> str:
     return "\n".join(lines)
 
 
-def run_pipeline(question: str, settings: Settings) -> tuple[Path, Path]:
+def run_pipeline(
+    question: str,
+    settings: Settings,
+    progress: Callable[[str], None] | None = None,
+) -> tuple[Path, Path]:
+    emit = progress or (lambda _: None)
+    emit("Step 1/4: Retrieving web pages...")
     pages = retrieve_pages(
         question=question,
         results_per_query=settings.search_results_per_query,
         max_pages=settings.max_pages_to_read,
+        progress=emit,
     )
     if not pages:
         raise RuntimeError("No web pages could be retrieved. Please try another question.")
 
+    emit(f"Step 2/4: Retrieved {len(pages)} pages. Generating article with LLM...")
     article = call_llm_to_write_article(question=question, pages=pages, settings=settings)
 
+    emit("Step 3/4: Writing files to output directory...")
     output_dir = Path(settings.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -51,4 +61,5 @@ def run_pipeline(question: str, settings: Settings) -> tuple[Path, Path]:
     article_path.write_text(article, encoding="utf-8")
     notes = build_research_notes(question=question, pages=pages)
     notes_path.write_text(notes, encoding="utf-8")
+    emit("Step 4/4: Completed.")
     return article_path, notes_path

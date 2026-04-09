@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import re
-from typing import Iterable
+from typing import Callable, Iterable
 
 import requests
 import trafilatura
@@ -22,6 +22,14 @@ class RetrievedPage:
     url: str
     snippet: str
     content: str
+
+
+ProgressFn = Callable[[str], None]
+
+
+def _progress(progress: ProgressFn | None, message: str) -> None:
+    if progress is not None:
+        progress(message)
 
 
 def generate_search_queries(question: str) -> list[str]:
@@ -78,7 +86,11 @@ def build_keyword_query(question: str) -> str:
     return " ".join(dict.fromkeys(tokens))
 
 
-def search_web(query: str, max_results: int) -> list[SearchResult]:
+def search_web(
+    query: str,
+    max_results: int,
+    progress: ProgressFn | None = None,
+) -> list[SearchResult]:
     results: list[SearchResult] = []
     try:
         with DDGS() as ddgs:
@@ -90,7 +102,8 @@ def search_web(query: str, max_results: int) -> list[SearchResult]:
                 if not url:
                     continue
                 results.append(SearchResult(title=title, url=url, snippet=snippet))
-    except Exception:
+    except Exception as exc:
+        _progress(progress, f"[retrieval] search failed for query: {query} ({exc})")
         return []
     return results
 
@@ -133,22 +146,40 @@ def fetch_page_text(url: str) -> str:
     return (text or "").strip()
 
 
-def retrieve_pages(question: str, results_per_query: int, max_pages: int) -> list[RetrievedPage]:
+def retrieve_pages(
+    question: str,
+    results_per_query: int,
+    max_pages: int,
+    progress: ProgressFn | None = None,
+) -> list[RetrievedPage]:
     queries = generate_search_queries(question)
+    _progress(progress, f"[retrieval] generated {len(queries)} queries")
     all_results: list[SearchResult] = []
-    for q in queries:
-        all_results.extend(search_web(q, max_results=results_per_query))
+    for idx, q in enumerate(queries, start=1):
+        _progress(progress, f"[retrieval] searching ({idx}/{len(queries)}): {q}")
+        query_results = search_web(
+            q,
+            max_results=results_per_query,
+            progress=progress,
+        )
+        _progress(progress, f"[retrieval] got {len(query_results)} results")
+        all_results.extend(query_results)
 
     unique_results = dedupe_results(all_results)
+    _progress(progress, f"[retrieval] deduped to {len(unique_results)} unique urls")
     pages: list[RetrievedPage] = []
-    for result in unique_results:
+    for idx, result in enumerate(unique_results, start=1):
         if len(pages) >= max_pages:
             break
+        _progress(progress, f"[retrieval] reading ({idx}/{len(unique_results)}): {result.url}")
         content = fetch_page_text(result.url)
         if not content:
             # Keep snippet as minimum viable evidence to avoid empty retrieval.
             content = result.snippet.strip()
+            if content:
+                _progress(progress, "[retrieval] page text unavailable, fallback to snippet")
         if not content:
+            _progress(progress, "[retrieval] skipped source (no usable content)")
             continue
         pages.append(
             RetrievedPage(
@@ -158,4 +189,5 @@ def retrieve_pages(question: str, results_per_query: int, max_pages: int) -> lis
                 content=content,
             )
         )
+        _progress(progress, f"[retrieval] collected {len(pages)}/{max_pages} pages")
     return pages

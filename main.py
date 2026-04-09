@@ -28,7 +28,12 @@ def main() -> int:
 
     try:
         settings = load_settings()
-        article_path, notes_path = run_pipeline(question=question, settings=settings)
+        print("[INFO] 已加载配置，开始执行深度研究流程...", flush=True)
+        article_path, notes_path = run_pipeline(
+            question=question,
+            settings=settings,
+            progress=lambda msg: print(msg, flush=True),
+        )
     except Exception as exc:  # pragma: no cover - cli safety
         print(f"Error: {exc}", file=sys.stderr)
         return 1

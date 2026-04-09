@@ -44,6 +44,12 @@ OUTPUT_DIR=outputs
 python3 main.py "请分析 AI Agent 在企业中的落地路径与风险"
 ```
 
+如需查看实时中间进度（检索/抓取/生成），可开启 verbose：
+
+```bash
+python3 main.py --verbose "请分析 AI Agent 在企业中的落地路径与风险"
+```
+
 运行后会在 `outputs/` 生成：
 
 - `article_*.md`：最终文章
