@@ -75,7 +75,13 @@ def call_llm_to_write_article(
         data=json.dumps(payload),
         timeout=settings.llm_timeout_seconds,
     )
-    response.raise_for_status()
+    if not response.ok:
+        response_text = response.text.strip()
+        if len(response_text) > 1200:
+            response_text = f"{response_text[:1200]}...(truncated)"
+        raise RuntimeError(
+            f"LLM request failed with status {response.status_code}: {response_text}"
+        )
     data = response.json()
     try:
         return data["choices"][0]["message"]["content"].strip()

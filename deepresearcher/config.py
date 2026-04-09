@@ -22,7 +22,7 @@ def load_settings() -> Settings:
 
     llm_api_url = os.getenv("LLM_API_URL", "").strip()
     llm_api_key = os.getenv("LLM_API_KEY", "").strip()
-    llm_model = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
+    llm_model = os.getenv("LLM_MODEL", "GLM4.7").strip()
     output_dir = os.getenv("OUTPUT_DIR", "outputs").strip() or "outputs"
 
     llm_timeout_seconds = int(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
