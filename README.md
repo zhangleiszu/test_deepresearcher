@@ -26,9 +26,9 @@ cp .env.example .env
 示例：
 
 ```env
-LLM_API_URL=https://api.openai.com/v1/chat/completions
+LLM_API_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions
 LLM_API_KEY=your_api_key_here
-LLM_MODEL=gpt-4o-mini
+LLM_MODEL=GLM4.7
 LLM_TIMEOUT_SECONDS=60
 
 SEARCH_RESULTS_PER_QUERY=5
