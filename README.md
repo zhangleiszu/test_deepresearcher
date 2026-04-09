@@ -29,7 +29,12 @@ cp .env.example .env
 LLM_API_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions
 LLM_API_KEY=your_api_key_here
 LLM_MODEL=GLM4.7
-LLM_TIMEOUT_SECONDS=60
+LLM_CONNECT_TIMEOUT_SECONDS=20
+LLM_TIMEOUT_SECONDS=120
+LLM_MAX_RETRIES=3
+LLM_RETRY_BACKOFF_SECONDS=2
+LLM_MAX_SOURCES=6
+LLM_MAX_CHARS_PER_SOURCE=1800
 
 SEARCH_RESULTS_PER_QUERY=5
 MAX_PAGES_TO_READ=8
@@ -44,11 +49,7 @@ OUTPUT_DIR=outputs
 python3 main.py "请分析 AI Agent 在企业中的落地路径与风险"
 ```
 
-如需查看实时中间进度（检索/抓取/生成），可开启 verbose：
-
-```bash
-python3 main.py --verbose "请分析 AI Agent 在企业中的落地路径与风险"
-```
+默认会实时打印中间进度（检索/抓取/生成/重试），如果模型响应慢，程序会自动重试并输出重试日志。
 
 运行后会在 `outputs/` 生成：
 

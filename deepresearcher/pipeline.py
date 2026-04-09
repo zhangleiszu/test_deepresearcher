@@ -49,7 +49,12 @@ def run_pipeline(
         raise RuntimeError("No web pages could be retrieved. Please try another question.")
 
     emit(f"Step 2/4: Retrieved {len(pages)} pages. Generating article with LLM...")
-    article = call_llm_to_write_article(question=question, pages=pages, settings=settings)
+    article = call_llm_to_write_article(
+        question=question,
+        pages=pages,
+        settings=settings,
+        progress=emit,
+    )
 
     emit("Step 3/4: Writing files to output directory...")
     output_dir = Path(settings.output_dir)
